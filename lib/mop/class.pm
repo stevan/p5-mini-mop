@@ -24,7 +24,12 @@ sub new {
         if ( my $attrs = $class->get_all_attributes ) {
             foreach my $attr ( keys %$attrs ) {
                 my ($plain_attr) = ($attr =~ /^\$(.*)/);
-                $instance->{ $attr } = \(exists $args{ $plain_attr } ? $args{ $plain_attr } : $attrs->{ $attr }->());
+                if ( exists $args{ $plain_attr } ) {
+                    $instance->{ $attr } = \($args{ $plain_attr });
+                }
+                else {
+                    $instance->{ $attr } = \(ref $attrs->{ $attr } ? $attrs->{ $attr }->() : $attrs->{ $attr });
+                }
             }
         }
         $class->bless( $instance );
