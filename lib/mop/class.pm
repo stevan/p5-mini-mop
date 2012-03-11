@@ -14,7 +14,7 @@ use Scope::Guard          qw[ guard ];
 
 use parent 'Package::Anon';
 
-fieldhashes \ my (%superclass, %attributes, %local_methods);
+fieldhashes \ my (%name, %superclass, %attributes, %local_methods);
 
 sub new {
     if ( ref $_[0] ) {
@@ -30,13 +30,22 @@ sub new {
         $class->bless( $instance );
     }
     else {
-        (shift)->SUPER::new( @_ );
+        my ($pkg, $name) = @_;
+        my $class = $pkg->_new_anon_stash( $name );
+        $class->set_name( $name );
+        $class;
     }
 }
 
+sub get_name          { $name{ $_[0] } }
 sub get_superclass    { $superclass{ $_[0] } }
 sub get_attributes    { $attributes{ $_[0] } }
 sub get_local_methods { $local_methods{ $_[0] } }
+
+sub set_name {
+    my $class = shift;
+    $name{ $class } = shift;
+}
 
 sub set_superclass {
     my ($class, $super) = @_;
@@ -96,8 +105,11 @@ sub add_attribute {
 sub add_method {
     my ($class, $name, $body) = @_;
 
-    my $method = subname(
-        $name => sub {
+    my $method_name = join '::' => ($class->get_name || ()), $name;
+
+    my $method;
+    $method = subname(
+        $method_name => sub {
             state $STACK = [];
 
             my $invocant = shift;
@@ -126,6 +138,7 @@ sub add_method {
 
             local $::SELF   = $invocant;
             local $::CLASS  = $class;
+            local $::CALLER = $method;
 
             $body->( @_ );
         }
