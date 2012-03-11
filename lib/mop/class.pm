@@ -73,7 +73,7 @@ sub get_all_methods {
             my $c = shift;
             %methods = (
                 %methods,
-                %{ $c->get_local_methods },
+                %{ $c->get_local_methods || {} },
             );
         }
     );
@@ -89,7 +89,7 @@ sub get_all_attributes {
             my $c = shift;
             %attrs = (
                 %attrs,
-                %{ $c->get_attributes },
+                %{ $c->get_attributes || {} },
             );
         }
     );
