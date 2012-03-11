@@ -58,54 +58,9 @@ sub DEMOLISH {
 }
 
 sub super {
-    die "Cannot call super() outside of a method" unless defined $::SELF;
-    my $invocant    = $::SELF;
-    my $method_name = (split '::' => ((caller(1))[3]))[-1];
-    my $dispatcher  = $::CLASS->get_dispatcher;
-    # find the method currently being called
-    my $method = mop::WALKMETH( $dispatcher, $method_name );
-    while ( $method != $::CALLER ) {
-        $method = mop::WALKMETH( $dispatcher, $method_name );
-    }
-    # and advance past it  by one
-    $method = mop::WALKMETH( $dispatcher, $method_name )
-              || die "No super method ($method_name) found";
-    $method->execute( $invocant, @_ );
 }
 
 
 1;
 
 __END__
-
-=pod
-
-=head1 NAME
-
-mop::syntax - The syntax module for the p5-mop
-
-=head1 SYNOPSIS
-
-  use mop::syntax;
-
-=head1 DESCRIPTION
-
-This module uses Devel::CallParser to provide the desired
-syntax for the p5-mop.
-
-=head1 AUTHORS
-
-Stevan Little E<lt>stevan.little@iinteractive.comE<gt>
-
-Jesse Luehrs E<lt>doy at tozt dot netE<gt>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright 2011 Infinity Interactive, Inc.
-
-L<http://www.iinteractive.com>
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
-
-=cut
