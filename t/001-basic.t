@@ -11,7 +11,7 @@ use mop;
 
 class Foo {
     has $bar = 10;
-    method bar { ${ $::SELF->{'$bar'} } }
+    method bar { $bar }
 }
 
 {
@@ -26,8 +26,8 @@ class Foo {
 
 class Bar (extends => Foo) {
     has $baz = 100;
-    method baz { ${ $::SELF->{'$baz'} } }
-    method gorch { $::SELF->bar + $::SELF->baz }
+    method baz { $baz }
+    method gorch { $self->bar + $self->baz }
 }
 
 {

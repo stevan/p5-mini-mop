@@ -9,6 +9,8 @@ our $AUTHORITY = 'cpan:STEVAN';
 
 use Hash::Util::FieldHash qw[ fieldhashes ];
 use Sub::Name             qw[ subname ];
+use PadWalker             qw[ set_closed_over ];
+use Scope::Guard          qw[ guard ];
 
 use parent 'Package::Anon';
 
@@ -96,7 +98,31 @@ sub add_method {
 
     my $method = subname(
         $name => sub {
+            state $STACK = [];
+
             my $invocant = shift;
+            my $env      = {
+                %$invocant,
+                '$self'  => \$invocant,
+                '$class' => \$class
+            };
+
+            push @$STACK => $env;
+            set_closed_over( $body, $env );
+
+            my $g = guard {
+                pop @$STACK;
+                if ( my $env = $STACK->[-1] ) {
+                    PadWalker::set_closed_over( $body, $env );
+                }
+                else {
+                    PadWalker::set_closed_over( $body, {
+                        (map { $_ => \undef } keys %$invocant),
+                        '$self'  => \undef,
+                        '$class' => \undef,
+                    });
+                }
+            };
 
             local $::SELF   = $invocant;
             local $::CLASS  = $class;
