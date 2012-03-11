@@ -58,6 +58,19 @@ sub DEMOLISH {
 }
 
 sub super {
+    die "Cannot call super() outside of a method" unless defined $::SELF;
+    my $invocant    = $::SELF;
+    my $method_name = (split '::' => ((caller(2))[3]))[-1];
+    my $dispatcher  = $::CLASS->get_dispatcher;
+    # find the method currently being called
+    my $method = mop::WALKMETH( $dispatcher, $method_name );
+    while ( $method && $method ne $::CALLER ) {
+        $method = mop::WALKMETH( $dispatcher, $method_name );
+    }
+    # and advance past it  by one
+    $method = mop::WALKMETH( $dispatcher, $method_name )
+              || die "No super method ($method_name) found";
+    $invocant->$method( @_ );
 }
 
 
