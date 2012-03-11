@@ -9,22 +9,21 @@ use Data::Dumper;
 
 use mop;
 
-my $Foo = mop::class->new('Foo');
-
-$Foo->add_attribute('$bar', sub { 10 });
-
-$Foo->add_method('bar' => sub { $::SELF->{'$bar'} });
-
-{
-    my $foo = $Foo->new;
-    warn Dumper $foo;
-    warn Dumper $foo->bar;
+class Foo {
+    has $bar = 10;
+    method bar { ${ $::SELF->{'$bar'} } }
 }
 
 {
-    my $foo = $Foo->new( bar => 20 );
-    warn Dumper $foo;
-    warn Dumper $foo->bar;
+    my $foo = Foo->new;
+    #isa_ok($foo, 'Foo');
+    is( $foo->bar, 10, '... got the right value' );
+}
+
+{
+    my $foo = Foo->new( bar => 20 );
+    #isa_ok($foo, 'Foo');
+    is( $foo->bar, 20, '... got the right value' );
 }
 
 done_testing;
