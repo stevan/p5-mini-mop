@@ -19,7 +19,7 @@ sub new {
         my $class = shift;
         my %args  = scalar @_ == 1 && ref $_[0] eq 'HASH' ? %{ $_[0] } : @_;
         my $instance = {};
-        if ( my $attrs = $attributes{ $class } ) {
+        if ( my $attrs = $class->get_all_attributes ) {
             foreach my $attr ( keys %$attrs ) {
                 my ($plain_attr) = ($attr =~ /^\$(.*)/);
                 $instance->{ $attr } = \(exists $args{ $plain_attr } ? $args{ $plain_attr } : $attrs->{ $attr }->());
@@ -53,6 +53,38 @@ sub get_dispatcher {
     return sub { state $mro = $class->get_mro; pop   @$mro } if $type eq 'reverse';
 }
 
+sub get_all_methods {
+    my $class = shift;
+    my %methods;
+    mop::WALKCLASS(
+        $class->get_dispatcher('reverse'),
+        sub {
+            my $c = shift;
+            %methods = (
+                %methods,
+                %{ $c->get_local_methods },
+            );
+        }
+    );
+    \%methods;
+}
+
+sub get_all_attributes {
+    my $class = shift;
+    my %attrs;
+    mop::WALKCLASS(
+        $class->get_dispatcher('reverse'),
+        sub {
+            my $c = shift;
+            %attrs = (
+                %attrs,
+                %{ $c->get_attributes },
+            );
+        }
+    );
+    \%attrs;
+}
+
 sub add_attribute {
     my ($class, $name, $constructor) = @_;
     $attributes{ $class } = {} unless exists $attributes{ $class };
@@ -80,27 +112,15 @@ sub add_method {
 sub finalize {
     my $class  = shift;
 
-    my %vtable;
+    my $methods = $class->get_all_methods;
 
-    mop::WALKCLASS(
-        $class->get_dispatcher('reverse'),
-        sub {
-            my $c = shift;
-            %vtable = (
-                %vtable,
-                %{ $c->get_local_methods },
-            );
-        }
-    );
-
-    foreach my $name ( keys %vtable ) {
-        my $method = $vtable{ $name };
+    foreach my $name ( keys %$methods ) {
+        my $method = $methods->{ $name };
         $class->SUPER::add_method(
             $name,
             $method
         ) unless exists $class->{ $name };
     }
-
 }
 
 1;
