@@ -35,7 +35,7 @@ into your class namespace.
 
         method data { $data }
 
-        method load_data {
+        BUILD {
             $file = file( $path );
             $data = [ $file->slurp( chomp => 1 ) ];
         }
@@ -43,7 +43,7 @@ into your class namespace.
 }
 
 my $data_file = My::DB::FlatFile::DataFile->new( path => __FILE__ );
-$data_file->load_data;
+
 is( $data_file->data->[0], '#!/usr/bin/perl', '... got the first line of the data we expected' );
 
 done_testing;

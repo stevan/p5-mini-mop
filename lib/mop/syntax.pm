@@ -32,6 +32,9 @@ sub has {
     $::CLASS->add_attribute( $name, $default );
 }
 
+sub BUILD    { $::CLASS->set_constructor( @_ ) }
+sub DEMOLISH { $::CLASS->set_destructor( @_ )  }
+
 sub build_class {
     my ($name, $metadata, $caller) = @_;
     my %metadata = %{ $metadata || {} };
@@ -47,14 +50,6 @@ sub finalize_class {
         no strict 'refs';
         *{"${caller}::${name}"} = Sub::Name::subname( $name, sub () { $class } );
     }
-}
-
-sub BUILD {
-    my ($body) = @_;
-}
-
-sub DEMOLISH {
-    my ($body) = @_;
 }
 
 sub super {

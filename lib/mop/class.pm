@@ -14,7 +14,14 @@ use Scope::Guard          qw[ guard ];
 
 use parent 'Package::Anon';
 
-fieldhashes \ my (%name, %superclass, %attributes, %local_methods);
+fieldhashes \ my (
+    %name,
+    %superclass,
+    %constructor,
+    %destructor,
+    %attributes,
+    %local_methods
+);
 
 sub new {
     if ( ref $_[0] ) {
@@ -32,7 +39,13 @@ sub new {
                 }
             }
         }
-        $class->bless( $instance );
+
+        my $self = $class->bless( $instance );
+        mop::WALKCLASS(
+            $class->get_dispatcher('reverse'),
+            sub { ( $_[0]->get_constructor || return )->( $self, \%args ); return }
+        );
+        $self;
     }
     else {
         my ($pkg, $name) = @_;
@@ -42,19 +55,24 @@ sub new {
     }
 }
 
-sub get_name          { $name{ $_[0] } }
-sub get_superclass    { $superclass{ $_[0] } }
-sub get_attributes    { $attributes{ $_[0] } }
+sub get_name          { $name{ $_[0] }          }
+sub get_superclass    { $superclass{ $_[0] }    }
+sub get_attributes    { $attributes{ $_[0] }    }
 sub get_local_methods { $local_methods{ $_[0] } }
+sub get_constructor   { $constructor{ $_[0] }   }
+sub get_destructor    { $destructor{ $_[0] }    }
 
-sub set_name {
-    my $class = shift;
-    $name{ $class } = shift;
+sub set_name        { $name{ $_[0] } = $_[1]        }
+sub set_superclass  { $superclass{ $_[0] } = $_[1]  }
+
+sub set_constructor {
+    my ($class, $body) = @_;
+    $constructor{ $class } = $class->_create_method( 'BUILD' => $body )
 }
 
-sub set_superclass {
-    my ($class, $super) = @_;
-    $superclass{ $class } = $super;
+sub set_destructor {
+    my ($class, $body) = @_;
+    $destructor{ $class } = $class->_create_method( 'DEMOLISH' => $body )
 }
 
 sub get_mro {
@@ -109,6 +127,35 @@ sub add_attribute {
 
 sub add_method {
     my ($class, $name, $body) = @_;
+    $local_methods{ $class } = {} unless exists $local_methods{ $class };
+    $local_methods{ $class }->{ $name } = $class->_create_method( $name, $body );
+}
+
+sub finalize {
+    my $class  = shift;
+
+    my $methods = $class->get_all_methods;
+
+    foreach my $name ( keys %$methods ) {
+        my $method = $methods->{ $name };
+        $class->SUPER::add_method(
+            $name,
+            $method
+        ) unless exists $class->{ $name };
+    }
+
+    $class->SUPER::add_method('DESTROY' => sub {
+        my $self = shift;
+        return unless $class; # likely in global destruction ...
+        mop::WALKCLASS(
+            $class->get_dispatcher,
+            sub { ( $_[0]->get_destructor || return )->( $self ); return }
+        );
+    });
+}
+
+sub _create_method {
+    my ($class, $name, $body) = @_;
 
     my $method_name = join '::' => ($class->get_name || ()), $name;
 
@@ -148,23 +195,6 @@ sub add_method {
             $body->( @_ );
         }
     );
-
-    $local_methods{ $class } = {} unless exists $local_methods{ $class };
-    $local_methods{ $class }->{ $name } = $method;
-}
-
-sub finalize {
-    my $class  = shift;
-
-    my $methods = $class->get_all_methods;
-
-    foreach my $name ( keys %$methods ) {
-        my $method = $methods->{ $name };
-        $class->SUPER::add_method(
-            $name,
-            $method
-        ) unless exists $class->{ $name };
-    }
 }
 
 1;
