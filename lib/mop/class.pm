@@ -82,6 +82,13 @@ sub get_mro {
     return [ $class, $super ? @{ $super->get_mro } : () ];
 }
 
+sub is_subclass_of {
+    my ($class, $super) = @_;
+    my @mro = @{ $class->get_mro };
+    shift @mro;
+    return scalar grep { $super eq $_ } @mro;
+}
+
 sub get_dispatcher {
     my ($class, $type) = @_;
     return sub { state $mro = $class->get_mro; shift @$mro } unless $type;
@@ -144,6 +151,11 @@ sub finalize {
             $method
         ) unless exists $class->{ $name };
     }
+
+    $class->SUPER::add_method('isa' => sub {
+        my ($self, $other) = @_;
+        $class eq $other || $class->is_subclass_of( $other )
+    });
 
     $class->SUPER::add_method('DESTROY' => sub {
         my $self = shift;
