@@ -27,6 +27,7 @@ sub new {
     if ( ref $_[0] ) {
         my $class = shift;
         my %args  = scalar @_ == 1 && ref $_[0] eq 'HASH' ? %{ $_[0] } : @_;
+
         my $instance = {};
         if ( my $attrs = $class->get_all_attributes ) {
             foreach my $attr ( keys %$attrs ) {

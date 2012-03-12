@@ -7,8 +7,6 @@ use warnings;
 our $VERSION   = '0.01';
 our $AUTHORITY = 'cpan:STEVAN';
 
-use Sub::Name ();
-
 sub setup_for {
     my $class = shift;
     my $pkg   = shift;
@@ -23,7 +21,7 @@ sub setup_for {
     }
 }
 
-sub class { }
+sub class {}
 
 sub method { $::CLASS->add_method( @_ ) }
 
@@ -38,7 +36,7 @@ sub DEMOLISH { $::CLASS->set_destructor( @_ )  }
 sub build_class {
     my ($name, $metadata, $caller) = @_;
     my %metadata = %{ $metadata || {} };
-    my $class = mop::class->new($caller eq 'main' ? $name : "${caller}::${name}");
+    my $class = mop::class->new( $caller eq 'main' ? $name : "${caller}::${name}", \%metadata );
     $class->set_superclass( $metadata{ 'extends' } ) if exists $metadata{ 'extends' };
     $class;
 }
@@ -62,7 +60,7 @@ sub super {
     while ( $method && $method ne $::CALLER ) {
         $method = mop::WALKMETH( $dispatcher, $method_name );
     }
-    # and advance past it  by one
+    # and advance past it by one
     $method = mop::WALKMETH( $dispatcher, $method_name )
               || die "No super method ($method_name) found";
     $invocant->$method( @_ );
