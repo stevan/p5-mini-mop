@@ -40,7 +40,10 @@ class CheckingAccount (extends => BankAccount) {
     }
 }
 
+ok CheckingAccount->is_subclass_of( BankAccount ), '... CheckingAccount is a subclass of BankAccount';
+
 my $savings = BankAccount->new( balance => 250 );
+ok $savings->isa( BankAccount ), '... savings is an instance of BankAccount';
 
 is $savings->balance, 250, '... got the savings balance we expected';
 
@@ -57,6 +60,8 @@ like(exception {
 my $checking = CheckingAccount->new(
     overdraft_account => $savings,
 );
+ok $checking->isa( CheckingAccount ), '... checking is an instance of BankAccount';
+ok $checking->isa( BankAccount ), '... checking is an instance of BankAccount';
 
 is $checking->balance, 0, '... got the checking balance we expected';
 

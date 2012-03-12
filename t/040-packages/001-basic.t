@@ -19,6 +19,7 @@ use Test::More;
 }
 
 my $foo = Foo::Bar->new;
+ok( $foo->isa( Foo::Bar ), '... the object is from class Foo' );
 is( Foo::Bar->get_name, 'Foo::Bar', '... got the correct (fully qualified) name of the class');
 like( "$foo", qr/^Foo::Bar/, '... object stringification includes fully qualified class name' );
 
@@ -43,7 +44,7 @@ like( "$foo", qr/^Foo::Bar/, '... object stringification includes fully qualifie
 }
 
 my $baz = Bar::Baz->new;
-
+ok( $baz->isa( Bar::Baz ), '... the object is from class Baz' );
 is( $baz->foo, 100_010, '... got the value we expected' );
 is( $baz->my_package, 'Bar', '... got the value we expected' );
 

@@ -43,7 +43,7 @@ into your class namespace.
 }
 
 my $data_file = My::DB::FlatFile::DataFile->new( path => __FILE__ );
-
+ok( $data_file->isa( My::DB::FlatFile::DataFile ), '... the object is from class My::DB::FlatFile::DataFile' );
 is( $data_file->data->[0], '#!/usr/bin/perl', '... got the first line of the data we expected' );
 
 done_testing;
