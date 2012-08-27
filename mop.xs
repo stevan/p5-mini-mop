@@ -442,6 +442,7 @@ PROTOTYPES: DISABLE
 BOOT:
 {
     cv_set_call_parser(get_cv("mop::syntax::class", 0), parse_class, &PL_sv_undef);
+    cv_set_call_parser(get_cv("mop::syntax::role", 0), parse_class, &PL_sv_undef);
     cv_set_call_parser(get_cv("mop::syntax::has", 0), parse_has, &PL_sv_undef);
     cv_set_call_parser(get_cv("mop::syntax::method", 0), parse_method, &PL_sv_yes);
     cv_set_call_parser(get_cv("mop::syntax::BUILD", 0), parse_method, &PL_sv_no);

@@ -17,6 +17,7 @@ use parent 'Package::Anon';
 fieldhashes \ my (
     %name,
     %superclass,
+    %roles,
     %constructor,
     %destructor,
     %attributes,
@@ -28,16 +29,19 @@ sub new {
         my $class = shift;
         my %args  = scalar @_ == 1 && ref $_[0] eq 'HASH' ? %{ $_[0] } : @_;
 
+        my %attrs = (
+            (map { %{ $_->get_attributes || {} } } @{ $class->get_roles }),
+            %{ $class->get_all_attributes || {} },
+        );
+
         my $instance = {};
-        if ( my $attrs = $class->get_all_attributes ) {
-            foreach my $attr ( keys %$attrs ) {
-                my ($plain_attr) = ($attr =~ /^\$(.*)/);
-                if ( exists $args{ $plain_attr } ) {
-                    $instance->{ $attr } = \($args{ $plain_attr });
-                }
-                else {
-                    $instance->{ $attr } = \(ref $attrs->{ $attr } ? $attrs->{ $attr }->() : $attrs->{ $attr });
-                }
+        foreach my $attr ( keys %attrs ) {
+            my ($plain_attr) = ($attr =~ /^\$(.*)/);
+            if ( exists $args{ $plain_attr } ) {
+                $instance->{ $attr } = \($args{ $plain_attr });
+            }
+            else {
+                $instance->{ $attr } = \(ref $attrs{ $attr } ? $attrs{ $attr }->() : $attrs{ $attr });
             }
         }
 
@@ -58,6 +62,7 @@ sub new {
 
 sub get_name          { $name{ $_[0] }          }
 sub get_superclass    { $superclass{ $_[0] }    }
+sub get_roles         { $roles{ $_[0] }         }
 sub get_attributes    { $attributes{ $_[0] }    }
 sub get_local_methods { $local_methods{ $_[0] } }
 sub get_constructor   { $constructor{ $_[0] }   }
@@ -65,6 +70,7 @@ sub get_destructor    { $destructor{ $_[0] }    }
 
 sub set_name        { $name{ $_[0] } = $_[1]        }
 sub set_superclass  { $superclass{ $_[0] } = $_[1]  }
+sub set_roles       { $roles{ $_[0] } = $_[1]       }
 
 sub set_constructor {
     my ($class, $body) = @_;
@@ -146,6 +152,17 @@ sub finalize {
 
     foreach my $name ( keys %$methods ) {
         my $method = $methods->{ $name };
+        $class->SUPER::add_method(
+            $name,
+            $method
+        ) unless exists $class->{ $name };
+    }
+
+    my %role_methods = map { %{ $_->get_local_methods } }
+                           @{ $class->get_roles || [] };
+
+    foreach my $name ( keys %role_methods ) {
+        my $method = $role_methods{ $name };
         $class->SUPER::add_method(
             $name,
             $method

@@ -13,6 +13,7 @@ sub setup_for {
     {
         no strict 'refs';
         *{ $pkg . '::class'    } = \&class;
+        *{ $pkg . '::role'     } = \&role;
         *{ $pkg . '::method'   } = \&method;
         *{ $pkg . '::has'      } = \&has;
         *{ $pkg . '::BUILD'    } = \&BUILD;
@@ -22,6 +23,7 @@ sub setup_for {
 }
 
 sub class {}
+sub role  {}
 
 sub method { $::CLASS->add_method( @_ ) }
 
@@ -38,6 +40,7 @@ sub build_class {
     my %metadata = %{ $metadata || {} };
     my $class = mop::class->new( $caller eq 'main' ? $name : "${caller}::${name}", \%metadata );
     $class->set_superclass( $metadata{ 'extends' } ) if exists $metadata{ 'extends' };
+    $class->set_roles( $metadata{ 'roles' } ) if exists $metadata{ 'roles' };
     $class;
 }
 
